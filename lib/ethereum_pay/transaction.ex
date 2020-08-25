@@ -27,16 +27,12 @@ defmodule EthereumPay.Transaction do
     }
   end
 
-  defp send_transaction(private_key, amount, wallet, [balance, tx_count, gas_price]) do
-    if ((balance |> eth_to_wei) < amount) do
-      {:error, :insufficient_funds}
-    else
-      [wallet: wallet, value: amount, nonce: tx_count, gas_price: gas_price]
-      |> build_transaction()
-      |> sign_transaction(private_key)
-      |> binary_to_hex
-      |> send_raw_transaction
-    end
+  defp send_transaction(private_key, amount, wallet, [tx_count, gas_price]) do
+    [wallet: wallet, value: amount, nonce: tx_count, gas_price: gas_price]
+    |> build_transaction
+    |> sign_transaction(private_key)
+    |> binary_to_hex
+    |> send_raw_transaction
   end
 
   def send(sender, wallet, amount) do
