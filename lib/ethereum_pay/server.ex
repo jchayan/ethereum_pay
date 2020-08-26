@@ -4,6 +4,8 @@ end
 
 defmodule EthereumPay.Router do
   use EthereumPay.Server
+  import Plug.Conn
+
   alias EthereumPay.Transaction, as: Transaction
 
   get "/ok" do
@@ -16,23 +18,22 @@ defmodule EthereumPay.Router do
     requires :amount, type: Float
   end
 
+  # POST - /send_transaction (params: {wallet, amount})
   post "/send_transaction" do
     sender = %{
       address: Application.fetch_env!(:ethereum_pay, :wallet_address),
       private_key: Application.fetch_env!(:ethereum_pay, :private_key)
     }
+
     result = Transaction.send(sender, params[:wallet], params[:amount])
+
     case result do
       {:error, error} ->
-        conn
-        |> Plug.Conn.put_status(500)
-        |> json(error)
+        conn |> put_status(500) |> json(error)
       {:ok, response} ->
         conn |> json(%{ data: response })
       _ ->
-        conn
-        |> Plug.Conn.put_status(500)
-        |> json(%{error: "unknown"})
+        conn |> put_status(500) |> json(%{error: "unknown"})
     end
   end
 end
@@ -52,8 +53,6 @@ defmodule EthereumPay.API do
   mount EthereumPay.Router
 
   rescue_from :all, as: e do
-    conn
-    |> put_status(500)
-    |> json(e)
+    conn |> put_status(500) |> json(e)
   end
 end

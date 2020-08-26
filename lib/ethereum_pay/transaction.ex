@@ -5,6 +5,8 @@ defmodule EthereumPay.Transaction do
   defdelegate send_raw_transaction(transaction), to: EthTx, as: :send
   defdelegate sign_transaction(transaction, pvkey), to: EthTx, as: :sign_transaction
 
+  use EthereumPay.Tasks
+
   @wei 1000000000000000000
 
   defp eth_to_wei(eth) do
@@ -36,9 +38,7 @@ defmodule EthereumPay.Transaction do
   end
 
   def send(sender, wallet, amount) do
-    import EthereumPay.TaskHelper
-
-    tasks = sender.address |> address_tasks
+    tasks = sender.address |> transaction_data
 
     if tasks.error |> Enum.count > 0 do
       {:error, tasks.error |> Enum.join("\n")}
