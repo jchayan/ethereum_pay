@@ -9,7 +9,7 @@ defmodule EthereumPay.Transaction do
 
   @wei 1000000000000000000
 
-  defp eth_to_wei(eth) do
+  def eth_to_wei(eth) do
     floor eth * @wei
   end
 

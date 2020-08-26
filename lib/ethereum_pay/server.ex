@@ -18,7 +18,7 @@ defmodule EthereumPay.Router do
     requires :amount, type: Float
   end
 
-  # POST - /send_transaction (params: {wallet, amount})
+  # POST - /send_transaction {wallet, amount}
   post "/send_transaction" do
     sender = %{
       address: Application.fetch_env!(:ethereum_pay, :wallet_address),
@@ -30,8 +30,8 @@ defmodule EthereumPay.Router do
     case result do
       {:error, error} ->
         conn |> put_status(500) |> json(error)
-      {:ok, response} ->
-        conn |> json(%{ data: response })
+      {:ok, tx} ->
+        conn |> json(%{ tx: tx })
       _ ->
         conn |> put_status(500) |> json(%{error: "unknown"})
     end

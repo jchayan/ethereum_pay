@@ -25,7 +25,7 @@ defmodule EthereumPay.Gas do
   end
 
   def current_price do 
-    %{ "average" => gas_price } = fetch()
+    %{ "safeLow" => gas_price } = fetch()
     floor((gas_price / 10) * 1000000000)
   end
 end
