@@ -7,6 +7,7 @@ defmodule EthereumPay.Router do
   import Plug.Conn
 
   alias EthereumPay.Transaction, as: Transaction
+  alias EthereumPay.BulkTransactions, as: BulkTransactions
 
   get "/ok" do
     :timer.sleep(1000)
@@ -20,22 +21,35 @@ defmodule EthereumPay.Router do
 
   # POST - /send_transaction {wallet, amount}
   post "/send_transaction" do
-    sender = %{
-      address: Application.fetch_env!(:ethereum_pay, :wallet_address),
-      private_key: Application.fetch_env!(:ethereum_pay, :private_key)
-    }
-
-    result = Transaction.send(sender, params[:wallet], params[:amount])
-
-    case result do
+    case Transaction.send(params) do
       {:error, error} ->
         conn |> put_status(500) |> json(error)
-      {:ok, tx} ->
-        conn |> json(%{ tx: tx })
-      _ ->
-        conn |> put_status(500) |> json(%{error: "unknown"})
+      {:ok, tx_id} ->
+        conn |> json(%{ tx_id: tx_id })
+      result ->
+        conn |> put_status(500) |> json(%{error: result})
     end
   end
+
+  params do
+    requires :transactions, type: List do
+      requires :wallet, type: String
+      requires :amount, type: Float
+    end
+  end
+
+  # POST - /send_transactions [{wallet, amount}...]
+  post "/send_transactions" do
+    case BulkTransactions.send(params[:transactions]) do
+      %{error: error} ->
+        conn |> put_status(500) |> json(error)
+      {:ok, data} ->
+        conn |> json(data)
+      result ->
+        conn |> put_status(500) |> json(%{error: result})
+    end
+  end
+
 end
 
 defmodule EthereumPay.API do
@@ -52,7 +66,7 @@ defmodule EthereumPay.API do
 
   mount EthereumPay.Router
 
-  rescue_from :all, as: e do
-    conn |> put_status(500) |> json(e)
-  end
+  # rescue_from :all, as: e do
+  #   conn |> put_status(500) |> json(e)
+  # end
 end

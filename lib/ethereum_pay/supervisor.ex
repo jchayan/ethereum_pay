@@ -6,6 +6,12 @@ defmodule EthereumPay.Supervisor do
   end
 
   def init(_arg) do
-    Supervisor.init([ EthereumPay.Server ], strategy: :one_for_one)
+    children = [
+      EthereumPay.Server,
+      { Mutex, name: EthereumPay.Mutex },
+      { EthereumPay.NonceManager, name: EthereumPay.NonceManager },
+      { Task.Supervisor, name: EthereumPay.TaskSupervisor }
+    ]
+    Supervisor.init(children, strategy: :one_for_one, max_seconds: 10)
   end
 end
