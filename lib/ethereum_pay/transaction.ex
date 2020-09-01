@@ -8,10 +8,6 @@ defmodule EthereumPay.Transaction do
   defdelegate send_raw(transaction), to: Ethereumex.HttpClient, as: :eth_send_raw_transaction
   defdelegate sign(transaction, pvkey), to: EthTx, as: :sign_transaction
 
-  @wei 1000000000000000000
-
-  def eth_to_wei(eth), do: floor eth * @wei
-
   defp hex_encode (binary) do
     "0x" <> (binary |> Base.encode16)
   end
@@ -37,15 +33,22 @@ defmodule EthereumPay.Transaction do
   defp send_transaction(private_key, amount, receiver) do
     nonce = Mutex.under(EthereumPay.Mutex, :transaction, &request_nonce/0) 
 
-    build(receiver, amount |> eth_to_wei, nonce)
+    build(receiver, amount, nonce)
     |> sign(private_key)
     |> hex_encode
     |> send_raw
   end
 
+  defp convert_currency(amount) do
+    import EthereumPay.Exchange
+    amount |> usd_to_eth |> eth_to_wei
+  end
+
   def send(transaction_data) do
     pv_key = Application.fetch_env!(:ethereum_pay, :private_key)
-    send_transaction(pv_key, transaction_data[:amount], transaction_data[:wallet])
+    amount = transaction_data[:amount] |> convert_currency
+
+    send_transaction(pv_key, amount, transaction_data[:wallet])
   end
 
 end
